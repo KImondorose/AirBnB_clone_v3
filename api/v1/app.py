@@ -1,35 +1,38 @@
 #!/usr/bin/python3
+# -*- coding: utf-8 -*-
 """
-Module app
+Created on Tue Sep  1 14:42:23 2020
+@authors: Robinson Montes
+          Mauricio Olarte
 """
-from api.v1.views import app_views
-from flasgger import Swagger
-from flask import (Blueprint, Flask, jsonify, make_response)
-from flask_cors import (CORS, cross_origin)
-from models import storage
 from os import getenv
-
+from flask import Flask, jsonify, Blueprint
+from models import storage
+from api.v1.views import app_views
+from flask_cors import CORS
 
 app = Flask(__name__)
-CORS(app, resources={r"/api/v1/*": {"origins": "*"}})
+CORS(app, origins="0.0.0.0")
 app.register_blueprint(app_views)
-Swagger(app)
-
-
-@app.errorhandler(404)
-def not_found(error):
-    """json 404 page"""
-    return make_response(jsonify({"error": "Not found"}), 404)
+CORS(app_views)
 
 
 @app.teardown_appcontext
-def teardown(exception):
-    """ closes the session """
+def close_db_sesion(error):
+    """ this for slash routing"""
     storage.close()
 
 
+@app.errorhandler(404)
+def page_not_found(e):
+    """handler for 404 errors that returns a JSON-formatted
+    404 status code response.
+    """
+    return ({'error': 'Not found'}), 404
+
+
 if __name__ == "__main__":
-    host = getenv("HBNB_API_HOST", "0.0.0.0")
-    port = getenv("HBNB_API_PORT", "5000")
-#    print(app.url_map)
-    app.run(host=host, port=port)
+    HBNB_API_HOST = getenv('HBNB_API_HOST')
+    HBNB_API_PORT = getenv('HBNB_API_PORT')
+    app.run(host=HBNB_API_HOST, port=HBNB_API_PORT,
+            threaded=True, debug=True)
